@@ -144,10 +144,10 @@ class FrameSimilarityChecker {
     companion object {
 
         // Grid size for sampling
-        private const val GRID_SIZE = 36
+        private const val GRID_SIZE = 38
 
         // Percentage of compared pixels that must match
-        private const val SIMILARITY_THRESHOLD = 0.6f
+        private const val SIMILARITY_THRESHOLD = 0.66f
 
         // Max color distance (R+G+B) for pixels to be "similar"
         private const val PIXEL_THRESHOLD = 75

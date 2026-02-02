@@ -6,20 +6,21 @@
   <img width="320" height="116" alt="Shade" src="assets/pixelated_app_name.png" />
 </h1>
 
+
 <p align="center">
-  <a href="https://github.com/mhss1/Shade/releases">
-    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/mhss1/Shade" />
-  </a>
-  <a href="https://www.gnu.org/licenses/agpl-3.0">
-    <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg?style=flat" />
-  </a>
-  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/mhss1/Shade" />
+Shade is an on-device sensitive content blocker for Android. It works across any app on your phone in
+real-time — no web views or wrappers required. Just native, private content filtering powered by a custom-trained on-device AI model.
 </p>
 
----
-
-**Shade** is an on-device NSFW content blocker for Android. It works across any app on your phone in
-real-time — no web views or wrappers required. Just native, private content filtering powered by a custom-trained on-device AI model.
+<p align="center">
+  <a href="https://github.com/mhss1/Shade/releases">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/mhss1/Shade?style=for-the-badge" />
+  </a>
+  <a href="https://www.gnu.org/licenses/agpl-3.0">
+    <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg?style=for-the-badge" />
+  </a>
+  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/mhss1/Shade?style=for-the-badge&color=d48600" />
+</p>
 
 ## Key Features
 

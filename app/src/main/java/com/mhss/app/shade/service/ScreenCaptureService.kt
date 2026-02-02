@@ -600,7 +600,7 @@ class ScreenCaptureService : Service() {
         private const val SMALL_MODEL_IMGZ = 416
 
         private const val EMPTY_FRAMES_THRESHOLD = 3
-        private const val FULLSCREEN_EMPTY_FRAMES_THRESHOLD = 6
+        private const val FULLSCREEN_EMPTY_FRAMES_THRESHOLD = 4
 
         private val _isRunningFlow = MutableStateFlow(false)
         val isRunningFlow: StateFlow<Boolean> = _isRunningFlow.asStateFlow()
