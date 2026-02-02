@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name" translatable="false">Shade</string>
+    
+    <string name="screen_capture_active">Screen capture is active</string>
+    <string name="screen_capture_inactive">Screen capture is inactive</string>
+    <string name="start_capture">Start Capture</string>
+    <string name="stop_capture">Stop Capture</string>
+    <string name="detection_confidence">Detection Confidence</string>
+    <string name="detection_confidence_description">Higher values mean fewer false positives, lower values catch more.</string>
+    <string name="confidence_label_low">Sensitive</string>
+    <string name="confidence_label_high">Strict</string>
+    <string name="settings_section_detection">Detection</string>
+    <string name="settings_section_advanced">Advanced</string>
+    <string name="power_mode">High Performance Mode</string>
+    <string name="power_mode_description">Uses a larger AI model for better accuracy and smoother overlays. Detection may be slightly slower due to additional processing.</string>
+    <string name="overlay_opacity">Overlay Opacity</string>
+    <string name="overlay_opacity_description">Adjust the transparency of the cover.</string>
+    <string name="opacity_label_transparent">Transparent</string>
+    <string name="opacity_label_solid">Solid</string>
+    <string name="full_screen_mode">Full Screen Mode (Experimental)</string>
+    <string name="full_screen_mode_description">Enable this ONLY if you selected \"Entire screen\" when starting capture. Uses motion tracking to reduce flickering, but may not work perfectly.\nIt is HIGHLY recommended to use \"Single app\" recording instead (available on Android 15+, and some devices on Android 14).</string>
+    <string name="notification_permission_required">Notification permission is required for the service to run in the background</string>
+    <string name="screen_capture_permission_denied">Screen capture permission denied</string>
+    <string name="accessibility_service_required">Please enable the accessibility service in Settings first</string>
+    <string name="tile_label">Start Shade</string>
+    <string name="notification_title">Screen Capture Service</string>
+    <string name="notification_text">Capturing screen for processing…</string>
+    <string name="notification_action_stop">Stop</string>
+    <string name="notification_action_clear">Clear</string>
+    <string name="notification_channel_name">Screen Capture</string>
+    <string name="accessibility_service_description">Shade uses this accessibility service to draw overlay content at full opacity. On Android 12 and above, regular overlays are limited to 80% opacity, which may not fully obscure detected content. Enabling this service allows Shade to display the overlay at any opacity level you choose.\n\nScreen content is captured for on-device processing only. No data is sent anywhere — Shade does not have internet permission.</string>
+    <string name="permission_setup_title">Let\'s Get Started</string>
+    <string name="permission_setup_subtitle">Shade needs a few permissions to work</string>
+    <string name="permission_granted">Granted</string>
+    <string name="permission_accessibility_title">Accessibility Service</string>
+    <string name="permission_accessibility_description">Allows Shade to draw a cover over detected content. In Settings, look for \"Installed apps\" or \"Installed services\", then enable Shade.</string>
+    <string name="permission_notification_title">Notifications</string>
+    <string name="permission_notification_description">Required to keep Shade running in the background. You\'ll also see controls to quickly stop or clear the cover.</string>
+    <string name="single_app_recording_unsupported_banner">Single app recording is not supported on this device. Using experimental full screen mode.</string>
+    <string name="device_not_supported_title">Unsupported Device</string>
+    <string name="single_app_recording_unsupported_dialog">Single app recording is not supported on this device. Shade will use the experimental full screen mode instead. This mode might not provide the best experience and quality.</string>
+    <string name="understand">Understand</string>
+    <string name="auto_start_apps">Auto-Start Apps</string>
+    <string name="auto_start_apps_description">Start Shade automatically when selected apps are opened</string>
+    <string name="select_apps">Select Apps</string>
+    <string name="no_apps_selected">No apps selected</string>
+    <string name="apps_selected">%1$d apps selected</string>
+    <string name="search_apps">Search apps</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="pixelation_level">Pixelation Level</string>
+    <string name="pixelation_level_description">Adjust the size of pixels. Higher pixelation can reduce processing load.</string>
+    <string name="pixelation_label_low">Low</string>
+    <string name="pixelation_label_high">High</string>
+    <string name="detection_starting">Starting detection…</string>
+    <string name="detection_started">Detection started</string>
+
+    <string name="getting_started_title">Welcome to Shade</string>
+    <string name="getting_started_step1_title">How It Works</string>
+    <string name="getting_started_step1_description">Shade detects sensitive content on your screen and pixelates it in real-time.</string>
+    <string name="getting_started_step2_title">Customize Your Experience</string>
+    <string name="getting_started_step2_description">Adjust detection sensitivity, overlay opacity, and pixelation level in Settings to match your preferences.</string>
+    <string name="getting_started_step3_title">Starting Detection</string>
+    <string name="getting_started_step3_description">Tap "Start Capture" and select "Single app" for the best experience. If you use "Entire screen", enable "Full Screen Mode" in Advanced settings first.</string>
+    <string name="getting_started_got_it">Let\'s Go</string>
+</resources>
