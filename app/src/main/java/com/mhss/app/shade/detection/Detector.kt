@@ -2,21 +2,20 @@ package com.mhss.app.shade.detection
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Rect
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
-import org.tensorflow.lite.support.common.ops.CastOp
-import org.tensorflow.lite.support.common.ops.NormalizeOp
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import org.tensorflow.lite.support.image.ops.ResizeOp.ResizeMethod
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.gpu.GpuDelegate
 import android.util.Log
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.concurrent.atomic.AtomicBoolean
+import androidx.core.graphics.createBitmap
 
 class Detector(
     private val context: Context,
@@ -36,15 +35,19 @@ class Detector(
     private var numChannel = 0
     private var maxDetections = 0
 
-    private var tensorImage: TensorImage = TensorImage(IMAGE_TYPE)
-
     private lateinit var outputBuffer: TensorBuffer
     private lateinit var outputFloatBuffer: FloatBuffer
     private lateinit var outputArray: FloatArray
 
-    private lateinit var imageProcessor: ImageProcessor
-
     private var confidenceThreshold = DEFAULT_CONF_THRESHOLD
+
+    private var inputBuffer: ByteBuffer? = null
+    private var inputFloatBuffer: FloatBuffer? = null
+    private var inputFloatArray: FloatArray? = null
+    private var inputPixels: IntArray? = null
+    private var resizedBitmap: Bitmap? = null
+    private var resizeCanvas: Canvas? = null
+    private var resizeRect: Rect? = null
 
     fun setup(threshold: Float = DEFAULT_CONF_THRESHOLD) {
         isReady.set(false)
@@ -74,11 +77,17 @@ class Detector(
         maxDetections = outputShape[1]
         numChannel = outputShape[2]  // 6 values per detection (x1, y1, x2, y2, conf, class)
 
-        imageProcessor = ImageProcessor.Builder()
-            .add(ResizeOp(tensorHeight, tensorWidth, ResizeMethod.NEAREST_NEIGHBOR))
-            .add(NormalizeOp(INPUT_MEAN, INPUT_STANDARD_DEVIATION))
-            .add(CastOp(IMAGE_TYPE))
-            .build()
+        val pixelCount = tensorWidth * tensorHeight
+        val buffer = ByteBuffer.allocateDirect(pixelCount * INPUT_CHANNELS * 4).apply {
+            order(ByteOrder.nativeOrder())
+        }
+        inputBuffer = buffer
+        inputFloatBuffer = buffer.asFloatBuffer()
+        inputFloatArray = FloatArray(pixelCount * INPUT_CHANNELS)
+        inputPixels = IntArray(pixelCount)
+        resizedBitmap = createBitmap(tensorWidth, tensorHeight)
+        resizeCanvas = Canvas(resizedBitmap!!)
+        resizeRect = Rect(0, 0, tensorWidth, tensorHeight)
 
         outputBuffer =
             TensorBuffer.createFixedSize(outputShape, IMAGE_TYPE)
@@ -111,16 +120,35 @@ class Detector(
         interpreter = null
         gpuDelegate?.close()
         gpuDelegate = null
+        resizedBitmap?.recycle()
+        resizedBitmap = null
+        resizeCanvas = null
+        resizeRect = null
+        inputPixels = null
+        inputFloatArray = null
+        inputFloatBuffer = null
+        inputBuffer = null
     }
 
     fun detect(frameBitmap: Bitmap) {
         if (!isReady.get()) return
+        val inBuffer = inputBuffer ?: return
+        val floatBuffer = inputFloatBuffer ?: return
+        val inputArray = inputFloatArray ?: return
+        val pixels = inputPixels ?: return
+        val targetBitmap = resizedBitmap ?: return
+        val canvas = resizeCanvas ?: return
+        val destRect = resizeRect ?: return
         val currentInterpreter = interpreter ?: return
 
-        tensorImage.load(frameBitmap)
-        val processedImage = imageProcessor.process(tensorImage)
+        canvas.drawBitmap(frameBitmap, null, destRect, null)
+        targetBitmap.getPixels(pixels, 0, tensorWidth, 0, 0, tensorWidth, tensorHeight)
+        fillInputArray(pixels, inputArray)
+        floatBuffer.rewind()
+        floatBuffer.put(inputArray)
+        inBuffer.rewind()
 
-        currentInterpreter.run(processedImage.buffer, outputBuffer.buffer)
+        currentInterpreter.run(inBuffer, outputBuffer.buffer)
 
         val boxes = extractBoxes()
 
@@ -134,6 +162,22 @@ class Detector(
 
     fun updateThreshold(threshold: Float) {
         confidenceThreshold = threshold
+    }
+
+    private fun fillInputArray(pixels: IntArray, output: FloatArray) {
+        var pixelIndex = 0
+        var outputIndex = 0
+        val invStd = 1f / INPUT_STANDARD_DEVIATION
+        val totalPixels = tensorWidth * tensorHeight
+
+        while (pixelIndex < totalPixels) {
+            val pixel = pixels[pixelIndex]
+            output[outputIndex] = ((pixel shr 16) and 0xFF) * invStd
+            output[outputIndex + 1] = ((pixel shr 8) and 0xFF) * invStd
+            output[outputIndex + 2] = (pixel and 0xFF) * invStd
+            pixelIndex++
+            outputIndex += 3
+        }
     }
 
     /**
@@ -184,8 +228,8 @@ class Detector(
 }
 
 private const val TAG = "Detector"
-private const val INPUT_MEAN = 0f
 private const val INPUT_STANDARD_DEVIATION = 255f
+private const val INPUT_CHANNELS = 3
 const val DEFAULT_CONFIDENCE_PERCENT = 60F
 private const val DEFAULT_CONF_THRESHOLD = DEFAULT_CONFIDENCE_PERCENT / 100f
 private val IMAGE_TYPE = DataType.FLOAT32

@@ -8,6 +8,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.util.Log
+import android.view.Display
+import android.view.Surface
 import android.view.View
 import androidx.core.graphics.createBitmap
 import java.util.ArrayList
@@ -37,6 +39,11 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
     private val pixelateDstRect = Rect()
 
     private val bitmapPool = ArrayDeque<Bitmap>(MAX_BITMAP_POOL_SIZE)
+
+    private var screenWidthPx = 0f
+    private var screenHeightPx = 0f
+    private var viewOffsetX = 0f
+    private var viewOffsetY = 0f
 
     private val paint = Paint().apply {
         isAntiAlias = false
@@ -82,14 +89,40 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
         }
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        updateScreenParams()
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        if (changed) updateScreenParams()
+    }
+
+    private fun updateScreenParams() {
+        val display: Display? = display
+        val rotation = display?.rotation ?: Surface.ROTATION_0
+        var displayW = display?.mode?.physicalWidth ?: width
+        var displayH = display?.mode?.physicalHeight ?: height
+        if (rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270) {
+            val temp = displayW
+            displayW = displayH
+            displayH = temp
+        }
+        val location = IntArray(2)
+        getLocationOnScreen(location)
+        viewOffsetX = location[0].toFloat()
+        viewOffsetY = location[1].toFloat()
+        screenWidthPx = displayW.toFloat()
+        screenHeightPx = displayH.toFloat()
+    }
+
     fun updateDetections(boxes: List<DetectionBox>, sourceBitmap: Bitmap) {
         tempNewRegions.clear()
         tempReusedFromCache.clear()
 
         val sourceWidth = sourceBitmap.width
         val sourceHeight = sourceBitmap.height
-        val viewWidth = width
-        val viewHeight = height
 
         for (box in boxes) {
             // Check if we can reuse a cached region (box hasn't moved much).
@@ -105,9 +138,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
                 tempReusedFromCache.add(cachedRegion)
             } else {
                 Log.d(TAG, "CACHE MISS: Creating new pixelated region")
-                val pixelatedRegion = createPixelatedRegion(
-                    box, sourceBitmap, sourceWidth, sourceHeight, viewWidth, viewHeight
-                )
+                val pixelatedRegion = createPixelatedRegion(box, sourceBitmap, sourceWidth, sourceHeight)
                 if (pixelatedRegion != null) tempNewRegions.add(pixelatedRegion)
             }
         }
@@ -133,9 +164,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
         box: DetectionBox,
         source: Bitmap,
         sourceWidth: Int,
-        sourceHeight: Int,
-        viewWidth: Int,
-        viewHeight: Int
+        sourceHeight: Int
     ): PixelatedRegion? {
         try {
             val srcLeft = (box.x1 * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
@@ -164,13 +193,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
             // Draw source region into the bitmap. Automatically downsamples, creating pixelation
             Canvas(bitmap).drawBitmap(source, pixelateSrcRect, pixelateDstRect, null)
 
+            val viewWidth = width.toFloat()
+            val viewHeight = height.toFloat()
+            val displayW = if (screenWidthPx > 0f) screenWidthPx else viewWidth
+            val displayH = if (screenHeightPx > 0f) screenHeightPx else viewHeight
+            val offsetX = viewOffsetX
+            val offsetY = viewOffsetY
+
             return PixelatedRegion(
                 bitmap = bitmap,
                 bounds = RectF(
-                    box.x1 * viewWidth,
-                    box.y1 * viewHeight,
-                    box.x2 * viewWidth,
-                    box.y2 * viewHeight
+                    box.x1 * displayW - offsetX,
+                    box.y1 * displayH - offsetY,
+                    box.x2 * displayW - offsetX,
+                    box.y2 * displayH - offsetY
                 ),
                 sourceBox = box,
                 contentWidth = contentWidth,
@@ -232,4 +268,4 @@ const val MIN_DOWNSAMPLE_FACTOR = 5
 const val MAX_DOWNSAMPLE_FACTOR = 30
 private const val MAX_BITMAP_POOL_SIZE = 10
 private const val MIN_BITMAP_DIMENSION = 8
-const val BOX_SIMILARITY_THRESHOLD = 0.025f
+const val BOX_SIMILARITY_THRESHOLD = 0.02f

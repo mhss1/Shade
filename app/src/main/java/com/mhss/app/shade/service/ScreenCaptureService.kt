@@ -381,7 +381,7 @@ class ScreenCaptureService : Service() {
     }
 
     private fun processImage(image: Image) {
-        try {
+        image.use { image ->
             if (isProcessing.compareAndSet(false, true)) {
                 currentFrameNumber++
                 val imageWidth = image.width.coerceAtLeast(1)
@@ -423,8 +423,6 @@ class ScreenCaptureService : Service() {
                     }
                 }
             }
-        } finally {
-            image.close()
         }
     }
 
