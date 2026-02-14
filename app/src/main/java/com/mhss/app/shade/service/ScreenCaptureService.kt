@@ -602,8 +602,8 @@ class ScreenCaptureService : Service() {
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_DATA = "data"
 
-        private const val LARGE_MODEL_PATH = "shade_large.tflite"
-        private const val SMALL_MODEL_PATH = "shade_small.tflite"
+        private const val LARGE_MODEL_PATH = "shade_large_v2.tflite"
+        private const val SMALL_MODEL_PATH = "shade_small_v2.tflite"
 
         private const val SMALL_MODEL_IMGZ = 416
 
