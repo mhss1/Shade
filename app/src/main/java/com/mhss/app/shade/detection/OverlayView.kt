@@ -15,7 +15,6 @@ import androidx.core.graphics.createBitmap
 import java.util.ArrayList
 import kotlin.math.abs
 
-
 /**
  * Overlay view that draws pixelated regions over detected content.
  * Handles pixelation computation, bitmap pooling, and caching.
@@ -27,18 +26,22 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
 
     private var downsampleFactor: Int = DEFAULT_DOWNSAMPLE_FACTOR
 
-    // Reusable lists to avoid allocations in updateDetections (swapped each frame)
     private var tempNewRegions = ArrayList<PixelatedRegion>()
     private val tempReusedFromCache = ArrayList<PixelatedRegion>()
 
-    // Reusable Rect for draw()
     private val drawSrcRect = Rect()
 
-    // Reusable Rects for createPixelatedRegion()
     private val pixelateSrcRect = Rect()
     private val pixelateDstRect = Rect()
+    private val pixelateCanvas = Canvas()
 
     private val bitmapPool = ArrayDeque<Bitmap>(MAX_BITMAP_POOL_SIZE)
+
+    private var currentSegRegions = ArrayList<PixelatedRegion>()
+    private var tempSegNewRegions = ArrayList<PixelatedRegion>()
+
+    private var segSourcePixels = IntArray(0)
+    private var segMaskPixels = IntArray(0)
 
     private var screenWidthPx = 0f
     private var screenHeightPx = 0f
@@ -66,13 +69,20 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
     }
 
     fun clear() {
-        if (currentRegions.isEmpty()) return
+        val hadRegions = currentRegions.isNotEmpty()
+        val hadSegmentations = currentSegRegions.isNotEmpty()
+
+        if (!hadRegions && !hadSegmentations) return
 
         currentRegions.forEach { returnBitmapToPool(it.bitmap) }
         currentRegions = emptyList()
 
         cachedRegions.forEach { returnBitmapToPool(it.bitmap) }
         cachedRegions.clear()
+
+        currentSegRegions.forEach { returnBitmapToPool(it.bitmap) }
+        currentSegRegions.clear()
+        tempSegNewRegions.clear()
 
         invalidate()
     }
@@ -82,9 +92,17 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
 
         currentRegions.forEach { region ->
             if (!region.bitmap.isRecycled) {
-                // Only draw the used portion of the potentially larger bitmap
                 drawSrcRect.set(0, 0, region.contentWidth, region.contentHeight)
                 canvas.drawBitmap(region.bitmap, drawSrcRect, region.bounds, paint)
+            }
+        }
+
+        if (currentSegRegions.isNotEmpty()) {
+            currentSegRegions.forEach { region ->
+                if (!region.bitmap.isRecycled) {
+                    drawSrcRect.set(0, 0, region.contentWidth, region.contentHeight)
+                    canvas.drawBitmap(region.bitmap, drawSrcRect, region.bounds, paint)
+                }
             }
         }
     }
@@ -118,6 +136,11 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
     }
 
     fun updateDetections(boxes: List<DetectionBox>, sourceBitmap: Bitmap) {
+        if (currentSegRegions.isNotEmpty()) {
+            currentSegRegions.forEach { returnBitmapToPool(it.bitmap) }
+            currentSegRegions.clear()
+        }
+
         tempNewRegions.clear()
         tempReusedFromCache.clear()
 
@@ -138,7 +161,8 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
                 tempReusedFromCache.add(cachedRegion)
             } else {
                 Log.d(TAG, "CACHE MISS: Creating new pixelated region")
-                val pixelatedRegion = createPixelatedRegion(box, sourceBitmap, sourceWidth, sourceHeight)
+                val pixelatedRegion =
+                    createPixelatedRegion(box, sourceBitmap, sourceWidth, sourceHeight)
                 if (pixelatedRegion != null) tempNewRegions.add(pixelatedRegion)
             }
         }
@@ -158,6 +182,131 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
         tempNewRegions = temp
 
         invalidate()
+    }
+
+    fun updateSegmentations(segmentations: List<RawSegmentation>, sourceBitmap: Bitmap) {
+        if (cachedRegions.isNotEmpty()) {
+            cachedRegions.forEach { returnBitmapToPool(it.bitmap) }
+            cachedRegions.clear()
+            currentRegions = emptyList()
+            tempNewRegions.clear()
+            tempReusedFromCache.clear()
+        }
+
+        tempSegNewRegions.clear()
+
+        val sourceWidth = sourceBitmap.width
+        val sourceHeight = sourceBitmap.height
+
+        for (seg in segmentations) {
+            val region = createSegmentedRegion(seg, sourceBitmap, sourceWidth, sourceHeight)
+            if (region != null) tempSegNewRegions.add(region)
+        }
+
+        currentSegRegions.forEach { returnBitmapToPool(it.bitmap) }
+
+        val temp = currentSegRegions
+        currentSegRegions = tempSegNewRegions
+        tempSegNewRegions = temp
+
+        invalidate()
+    }
+
+    private fun createSegmentedRegion(
+        seg: RawSegmentation,
+        source: Bitmap,
+        sourceWidth: Int,
+        sourceHeight: Int
+    ): PixelatedRegion? {
+        try {
+            val box = seg.box
+            val srcLeft = (box.x1 * sourceWidth).toInt().coerceIn(0, sourceWidth - 1)
+            val srcTop = (box.y1 * sourceHeight).toInt().coerceIn(0, sourceHeight - 1)
+            val srcRight = (box.x2 * sourceWidth).toInt().coerceIn(srcLeft + 1, sourceWidth)
+            val srcBottom = (box.y2 * sourceHeight).toInt().coerceIn(srcTop + 1, sourceHeight)
+
+            val regionWidth = srcRight - srcLeft
+            val regionHeight = srcBottom - srcTop
+
+            if (regionWidth <= 0 || regionHeight <= 0) return null
+
+            val contentWidth = (regionWidth / downsampleFactor).coerceAtLeast(1)
+            val contentHeight = (regionHeight / downsampleFactor).coerceAtLeast(1)
+
+            val bitmapWidth = contentWidth.nextPowerOf2()
+            val bitmapHeight = contentHeight.nextPowerOf2()
+
+            val bitmap =
+                getBitmapFromPool(bitmapWidth, bitmapHeight) ?: createBitmap(
+                    bitmapWidth,
+                    bitmapHeight
+                )
+
+            val totalSourcePixels = regionWidth * regionHeight
+            if (segSourcePixels.size < totalSourcePixels) {
+                segSourcePixels = IntArray(totalSourcePixels)
+            }
+            source.getPixels(
+                segSourcePixels,
+                0,
+                regionWidth,
+                srcLeft,
+                srcTop,
+                regionWidth,
+                regionHeight
+            )
+
+            val totalMaskPixels = bitmapWidth * bitmapHeight
+            if (segMaskPixels.size < totalMaskPixels) {
+                segMaskPixels = IntArray(totalMaskPixels)
+            }
+
+            val mask = seg.mask
+            val maskW = seg.maskWidth
+            val maskH = seg.maskHeight
+
+            for (y in 0 until contentHeight) {
+                for (x in 0 until contentWidth) {
+                    val srcX = (x * downsampleFactor).coerceIn(0, regionWidth - 1)
+                    val srcY = (y * downsampleFactor).coerceIn(0, regionHeight - 1)
+                    val sourcePixel = segSourcePixels[srcY * regionWidth + srcX]
+
+                    val maskX = (x * maskW / contentWidth).coerceIn(0, maskW - 1)
+                    val maskY = (y * maskH / contentHeight).coerceIn(0, maskH - 1)
+
+                    val pixelIndex = y * bitmapWidth + x
+                    if (mask[maskY * maskW + maskX]) {
+                        segMaskPixels[pixelIndex] = sourcePixel or 0xFF000000.toInt()
+                    } else {
+                        segMaskPixels[pixelIndex] = 0x00000000
+                    }
+                }
+            }
+
+            bitmap.setPixels(segMaskPixels, 0, bitmapWidth, 0, 0, bitmapWidth, bitmapHeight)
+
+            val viewWidth = width.toFloat()
+            val viewHeight = height.toFloat()
+            val displayW = if (screenWidthPx > 0f) screenWidthPx else viewWidth
+            val displayH = if (screenHeightPx > 0f) screenHeightPx else viewHeight
+            val offsetX = viewOffsetX
+            val offsetY = viewOffsetY
+
+            return PixelatedRegion(
+                bitmap = bitmap,
+                bounds = RectF(
+                    box.x1 * displayW - offsetX,
+                    box.y1 * displayH - offsetY,
+                    box.x2 * displayW - offsetX,
+                    box.y2 * displayH - offsetY
+                ),
+                sourceBox = box,
+                contentWidth = contentWidth,
+                contentHeight = contentHeight
+            )
+        } catch (_: Exception) {
+            return null
+        }
     }
 
     private fun createPixelatedRegion(
@@ -185,13 +334,17 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
             val bitmapHeight = contentHeight.nextPowerOf2()
 
             val bitmap =
-                getBitmapFromPool(bitmapWidth, bitmapHeight) ?: createBitmap(bitmapWidth, bitmapHeight)
+                getBitmapFromPool(bitmapWidth, bitmapHeight) ?: createBitmap(
+                    bitmapWidth,
+                    bitmapHeight
+                )
 
             pixelateSrcRect.set(srcLeft, srcTop, srcRight, srcBottom)
             pixelateDstRect.set(0, 0, contentWidth, contentHeight)
 
-            // Draw source region into the bitmap. Automatically downsamples, creating pixelation
-            Canvas(bitmap).drawBitmap(source, pixelateSrcRect, pixelateDstRect, null)
+            // Draw source region into the bitmap. Automatically downsamples, creating pixelation.
+            pixelateCanvas.setBitmap(bitmap)
+            pixelateCanvas.drawBitmap(source, pixelateSrcRect, pixelateDstRect, null)
 
             val viewWidth = width.toFloat()
             val viewHeight = height.toFloat()
@@ -245,11 +398,13 @@ class OverlayView(context: Context?, attrs: AttributeSet?) : View(context, attrs
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         clear()
+        pixelateCanvas.setBitmap(null)
         bitmapPool.forEach { if (!it.isRecycled) it.recycle() }
         bitmapPool.clear()
     }
 
-    private fun Int.nextPowerOf2(): Int {
+
+    private inline fun Int.nextPowerOf2(): Int {
         if (this <= MIN_BITMAP_DIMENSION) return MIN_BITMAP_DIMENSION
         return 1 shl (32 - Integer.numberOfLeadingZeros(this - 1))
     }

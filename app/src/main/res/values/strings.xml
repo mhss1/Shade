@@ -13,10 +13,14 @@
     <string name="settings_section_advanced">Advanced</string>
     <string name="power_mode">High Performance Mode</string>
     <string name="power_mode_description">Uses a larger AI model for better accuracy and smoother overlays. Detection may be slightly slower due to additional processing.</string>
+    <string name="detailed_mode">Detailed Mode</string>
+    <string name="detailed_mode_description">Covers the exact shape of detected people instead of using rectangular boxes, so nearby objects won\'t be accidentally hidden. Uses more resources</string>
     <string name="overlay_opacity">Overlay Opacity</string>
     <string name="overlay_opacity_description">Adjust the transparency of the cover.</string>
     <string name="opacity_label_transparent">Transparent</string>
     <string name="opacity_label_solid">Solid</string>
+    <string name="full_opacity">Full Opacity</string>
+    <string name="low_opacity">Low Opacity</string>
     <string name="full_screen_mode">Full Screen Mode (Experimental)</string>
     <string name="full_screen_mode_description">Enable this ONLY if you selected \"Entire screen\" when starting capture. Uses motion tracking to reduce flickering, but may not work perfectly.\nIt is HIGHLY recommended to use \"Single app\" recording instead (available on Android 15+, and some devices on Android 14).</string>
     <string name="notification_permission_required">Notification permission is required for the service to run in the background</string>
@@ -52,8 +56,13 @@
     <string name="pixelation_level_description">Adjust the size of pixels. Higher pixelation can reduce processing load.</string>
     <string name="pixelation_label_low">Low</string>
     <string name="pixelation_label_high">High</string>
+    <string name="high_pixelation">High Pixelation</string>
+    <string name="low_pixelation">Low Pixelation</string>
+    <string name="normal_mode">Normal Mode</string>
+    <string name="ok">Ok</string>
     <string name="detection_starting">Starting detection…</string>
     <string name="detection_started">Detection started</string>
+    <string name="detection_setup_failed">Something went wrong while starting detection.</string>
 
     <string name="getting_started_title">Welcome to Shade</string>
     <string name="getting_started_step1_title">How It Works</string>

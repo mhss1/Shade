@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -53,6 +54,7 @@ import com.mhss.app.shade.presentation.components.GettingStartedDialog
 import com.mhss.app.shade.presentation.components.GitHubFooter
 import com.mhss.app.shade.presentation.components.OverlayOpacityCard
 import com.mhss.app.shade.presentation.components.PixelationLevelCard
+import com.mhss.app.shade.presentation.components.PreviewDialog
 import com.mhss.app.shade.presentation.components.SettingsSectionHeader
 import com.mhss.app.shade.presentation.components.SettingsToggleCard
 import com.mhss.app.shade.presentation.components.UnsupportedBanner
@@ -110,6 +112,7 @@ class MainActivity : ComponentActivity() {
                         onStopCapture = { stopScreenCapture() },
                         onConfidenceChanged = { value -> viewModel.updateConfidence(value) },
                         onPerformanceModeChanged = { enabled -> viewModel.updatePowerMode(enabled) },
+                        onDetailedModeChanged = { enabled -> viewModel.updateDetailedMode(enabled) },
                         onOverlayOpacityChanged = { value -> viewModel.updateOverlayOpacity(value) },
                         onPixelationLevelChanged = { value -> viewModel.updatePixelationLevel(value) },
                         onFullScreenModeChanged = { enabled ->
@@ -193,6 +196,7 @@ fun MainScreen(
     onStopCapture: () -> Unit,
     onConfidenceChanged: (Float) -> Unit,
     onPerformanceModeChanged: (Boolean) -> Unit,
+    onDetailedModeChanged: (Boolean) -> Unit,
     onOverlayOpacityChanged: (Float) -> Unit,
     onPixelationLevelChanged: (Int) -> Unit,
     onFullScreenModeChanged: (Boolean) -> Unit,
@@ -282,11 +286,29 @@ fun MainScreen(
             SettingsSectionHeader(stringResource(R.string.settings_section_advanced))
 
             SettingsToggleCard(
+                icon = Icons.AutoMirrored.Outlined.DirectionsRun,
+                title = stringResource(R.string.detailed_mode),
+                description = stringResource(R.string.detailed_mode_description),
+                checked = uiState.detailedModeEnabled,
+                onCheckedChange = onDetailedModeChanged,
+                infoDialog = { onDismiss ->
+                    PreviewDialog(
+                        firstImageRes = R.drawable.full_low_pixelation_example,
+                        firstLabelRes = R.string.normal_mode,
+                        secondImageRes = R.drawable.detailed_mode_example,
+                        secondLabelRes = R.string.detailed_mode,
+                        onDismiss = onDismiss
+                    )
+                }
+            )
+
+            SettingsToggleCard(
                 icon = Icons.Outlined.Speed,
                 title = stringResource(R.string.power_mode),
                 description = stringResource(R.string.power_mode_description),
                 checked = uiState.performanceModeEnabled,
-                onCheckedChange = onPerformanceModeChanged
+                onCheckedChange = onPerformanceModeChanged,
+                enabled = !uiState.detailedModeEnabled
             )
 
             SettingsToggleCard(

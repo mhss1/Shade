@@ -7,16 +7,24 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,6 +38,18 @@ fun PixelationLevelCard(
     pixelationLevel: Int,
     onPixelationLevelChanged: (Int) -> Unit
 ) {
+    var showPreview by remember { mutableStateOf(false) }
+
+    if (showPreview) {
+        PreviewDialog(
+            firstImageRes = R.drawable.full_low_pixelation_example,
+            firstLabelRes = R.string.low_pixelation,
+            secondImageRes = R.drawable.full_high_pixelation_example,
+            secondLabelRes = R.string.high_pixelation,
+            onDismiss = { showPreview = false }
+        )
+    }
+
     SettingsCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -47,6 +67,14 @@ fun PixelationLevelCard(
                     text = stringResource(R.string.pixelation_level_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = { showPreview = true }, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

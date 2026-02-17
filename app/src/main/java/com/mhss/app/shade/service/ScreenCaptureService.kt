@@ -25,6 +25,7 @@ import com.mhss.app.shade.R
 import com.mhss.app.shade.detection.DetectionBox
 import com.mhss.app.shade.detection.Detector
 import com.mhss.app.shade.detection.FrameSimilarityChecker
+import com.mhss.app.shade.detection.RawSegmentation
 import com.mhss.app.shade.util.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +73,8 @@ class ScreenCaptureService : Service() {
     private var confidenceThreshold: Float = DEFAULT_CONFIDENCE_PERCENT / 100f
     private var overlayOpacity: Float = 100f
     private var fullScreenModeEnabled: Boolean = false
+    private var performanceModeEnabled: Boolean = false
+    private var detailedModeEnabled: Boolean = false
     private var confidenceUpdatesJob: Job? = null
 
     private var backgroundThread: HandlerThread? = null
@@ -110,7 +113,9 @@ class ScreenCaptureService : Service() {
                     confidenceThreshold = preferenceManager.getConfidencePercent() / 100f
                     overlayOpacity = preferenceManager.getOverlayOpacity()
                     fullScreenModeEnabled = preferenceManager.isFullScreenModeEnabled()
-                    val performanceModeEnabled = preferenceManager.isPerformanceModeEnabled()
+                    detailedModeEnabled = preferenceManager.isDetailedModeEnabled()
+                    performanceModeEnabled =
+                        if (detailedModeEnabled) false else preferenceManager.isPerformanceModeEnabled()
                     val pixelationLevel = preferenceManager.getPixelationLevel()
 
                     withContext(Dispatchers.Main) {
@@ -118,12 +123,14 @@ class ScreenCaptureService : Service() {
                         OverlayManager.setPixelationLevel(pixelationLevel)
                     }
 
-                    val detectorReady = setupDetector(performanceModeEnabled, confidenceThreshold)
+                    val detectorReady = setupDetector(
+                        performanceModeEnabled,
+                        confidenceThreshold,
+                        detailedModeEnabled
+                    )
 
                     if (!detectorReady) {
-                        OverlayManager.isServiceStartingInProgress = false
-                        stopForeground(STOP_FOREGROUND_REMOVE)
-                        stopSelf()
+                        handleSetupFailure()
                         return@launch
                     }
 
@@ -140,7 +147,18 @@ class ScreenCaptureService : Service() {
 
                         launch {
                             preferenceManager.performanceModeFlow.drop(1).collectLatest { enabled ->
-                                rebuildDetector(enabled)
+                                performanceModeEnabled = enabled
+                                if (!detailedModeEnabled) {
+                                    rebuildDetector(enabled, segmentationMode = false)
+                                }
+                            }
+                        }
+
+                        launch {
+                            preferenceManager.detailedModeFlow.drop(1).collectLatest { enabled ->
+                                detailedModeEnabled = enabled
+                                val usePowerModel = if (enabled) false else performanceModeEnabled
+                                rebuildDetector(usePowerModel, enabled)
                             }
                         }
 
@@ -184,7 +202,7 @@ class ScreenCaptureService : Service() {
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         } else if (intent?.action == ACTION_CLEAR) {
-            clearDetections()
+            clearOverlay()
             frameSimilarityChecker.clear()
         }
         return START_NOT_STICKY
@@ -217,7 +235,7 @@ class ScreenCaptureService : Service() {
 
         override fun onCapturedContentVisibilityChanged(isVisible: Boolean) {
             isTargetAppVisible = isVisible
-            if (!isVisible) clearDetections()
+            if (!isVisible) clearOverlay()
         }
     }
 
@@ -337,7 +355,7 @@ class ScreenCaptureService : Service() {
                 newHeight = newHeight,
                 newRotation = rotation
             )
-            clearDetections()
+            clearOverlay()
         } else {
             screenDensity = newScreenDensity
             screenWidth = newWidth
@@ -439,33 +457,59 @@ class ScreenCaptureService : Service() {
         Log.d(TAG, "Screen capture started")
     }
 
-    private fun setupDetector(useBigModel: Boolean, threshold: Float): Boolean {
+    private fun setupDetector(
+        useBigModel: Boolean,
+        threshold: Float,
+        segmentationMode: Boolean = false
+    ): Boolean {
         synchronized(detectorLock) {
             try {
                 detector?.clear()
 
-                val modelPath =
-                    if (useBigModel) LARGE_MODEL_PATH else SMALL_MODEL_PATH
+                val modelPath = when {
+                    segmentationMode -> SEGMENTATION_MODEL_PATH
+                    useBigModel -> LARGE_MODEL_PATH
+                    else -> SMALL_MODEL_PATH
+                }
 
                 val tempDetector = Detector(
                     context = this@ScreenCaptureService,
                     modelPath = modelPath,
-                    onBoxesDetected = { boundingBoxes, sourceBitmap ->
-                        if (isTargetAppVisible) {
-                            val boxesToShow = if (fullScreenModeEnabled) {
-                                frameSimilarityChecker.onDetectionSuccess(
-                                    sourceBitmap,
+                    segmentationMode = segmentationMode,
+                    onBoxesDetected = if (!segmentationMode) {
+                        { boundingBoxes, sourceBitmap ->
+                            if (isTargetAppVisible) {
+                                val boxesToShow = if (fullScreenModeEnabled) {
+                                    frameSimilarityChecker.onDetectionSuccess(
+                                        sourceBitmap,
+                                        boundingBoxes
+                                    )
+                                } else {
                                     boundingBoxes
-                                )
+                                }
+                                updateDetections(boxesToShow, sourceBitmap)
                             } else {
-                                boundingBoxes
+                                tryRecycleBitmap(sourceBitmap)
                             }
-                            updateDetections(boxesToShow, sourceBitmap)
-                        } else {
-                            tryRecycleBitmap(sourceBitmap)
+                            lastDetectedFrameNumber = currentFrameNumber
                         }
-                        lastDetectedFrameNumber = currentFrameNumber
-                    },
+                    } else null,
+                    onSegmentationResult = if (segmentationMode) {
+                        { segmentations, sourceBitmap ->
+                            if (isTargetAppVisible) {
+                                if (fullScreenModeEnabled) {
+                                    frameSimilarityChecker.onDetectionSuccess(
+                                        sourceBitmap,
+                                        segmentations.map { it.box }
+                                    )
+                                }
+                                updateSegmentations(segmentations, sourceBitmap)
+                            } else {
+                                tryRecycleBitmap(sourceBitmap)
+                            }
+                            lastDetectedFrameNumber = currentFrameNumber
+                        }
+                    } else null,
                     onEmptyDetections = { currentFrame ->
                         val framesSinceLastDetection = currentFrameNumber - lastDetectedFrameNumber
 
@@ -490,11 +534,19 @@ class ScreenCaptureService : Service() {
                             }
                         }
 
-                        clearDetections()
+                        clearOverlay()
                         tryRecycleBitmap(currentFrame)
                     },
                 ).also {
-                    it.setup(threshold)
+                    try {
+                        it.setup(threshold)
+                    } catch (th: Throwable) {
+                        it.clear()
+                        throw th
+                    }
+                    if (!it.isSetupComplete()) {
+                        throw IllegalStateException("Detector setup did not complete")
+                    }
                 }
 
                 detector = tempDetector
@@ -502,17 +554,44 @@ class ScreenCaptureService : Service() {
                 Log.d(TAG, "Detector setup complete with model: $modelPath, threshold: $threshold")
                 return true
             } catch (e: Exception) {
-                Log.e(TAG, "Error setting up detector: ${e.message}")
+                Log.e(TAG, "Error setting up detector: ${e.message}", e)
                 detector = null
                 return false
             }
         }
     }
 
-    private fun rebuildDetector(usePowerModel: Boolean) {
-        val rebuilt = setupDetector(usePowerModel, confidenceThreshold)
-        if (!rebuilt) return
+    private fun rebuildDetector(usePowerModel: Boolean, segmentationMode: Boolean) {
+        clearOverlay()
+        frameSimilarityChecker.clear()
+        val rebuilt = setupDetector(usePowerModel, confidenceThreshold, segmentationMode)
+        if (!rebuilt) {
+            handleSetupFailure()
+            return
+        }
         serviceScope.launch(Dispatchers.Main) { updateVirtualDisplayConfig() }
+    }
+
+    private fun handleSetupFailure() {
+        synchronized(detectorLock) {
+            detector?.clear()
+            detector = null
+        }
+        clearOverlay()
+        frameSimilarityChecker.clear()
+        isCapturing = false
+        _isRunningFlow.value = false
+        OverlayManager.isServiceStartingInProgress = false
+
+        mainHandler.post {
+            Toast.makeText(
+                this,
+                R.string.detection_setup_failed,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override fun onDestroy() {
@@ -529,6 +608,13 @@ class ScreenCaptureService : Service() {
     private fun updateDetections(boxes: List<DetectionBox>, sourceBitmap: Bitmap) {
         mainHandler.post {
             OverlayManager.updateDetections(boxes, sourceBitmap)
+            tryRecycleBitmap(sourceBitmap)
+        }
+    }
+
+    private fun updateSegmentations(segmentations: List<RawSegmentation>, sourceBitmap: Bitmap) {
+        mainHandler.post {
+            OverlayManager.updateSegmentations(segmentations, sourceBitmap)
             tryRecycleBitmap(sourceBitmap)
         }
     }
@@ -553,8 +639,8 @@ class ScreenCaptureService : Service() {
         if (bitmap != inputBitmap && !bitmap.isRecycled && bitmap.isMutable) bitmap.recycle()
     }
 
-    private inline fun clearDetections() {
-        mainHandler.post { OverlayManager.clearDetections() }
+    private inline fun clearOverlay() {
+        mainHandler.post { OverlayManager.clear() }
     }
 
     private fun stopCapture() {
@@ -570,7 +656,7 @@ class ScreenCaptureService : Service() {
             imageReader?.close()
             mediaProjection?.unregisterCallback(mediaProjectionCallback)
             mediaProjection?.stop()
-            clearDetections()
+            clearOverlay()
         } catch (e: Exception) {
             Log.e(TAG, "Error stopping capture: ${e.message}")
         }
@@ -604,6 +690,7 @@ class ScreenCaptureService : Service() {
 
         private const val LARGE_MODEL_PATH = "shade_large_v2.tflite"
         private const val SMALL_MODEL_PATH = "shade_small_v2.tflite"
+        private const val SEGMENTATION_MODEL_PATH = "shade_seg_v1.tflite"
 
         private const val SMALL_MODEL_IMGZ = 416
 

@@ -11,10 +11,14 @@
     <string name="settings_section_advanced">متقدم</string>
     <string name="power_mode">وضع الأداء العالي</string>
     <string name="power_mode_description">يستخدم نموذج ذكاء اصطناعي أكبر لدقة أفضل وتغطية أكثر سلاسة. قد يكون الكشف أبطأ قليلاً بسبب المعالجة الإضافية.</string>
+    <string name="detailed_mode">الوضع التفصيلي</string>
+    <string name="detailed_mode_description">يغطي الشكل الدقيق للأشخاص المكتشفين بدلاً من استخدام مربعات كاملة قد تخفي عناصر قريبة. يستهلك موارد أكثر.</string>
     <string name="overlay_opacity">الشفافية</string>
     <string name="overlay_opacity_description">ضبط شفافية الغطاء.</string>
     <string name="opacity_label_transparent">شفاف</string>
     <string name="opacity_label_solid">معتم</string>
+    <string name="full_opacity">شفافية كاملة</string>
+    <string name="low_opacity">شفافية منخفضة</string>
     <string name="full_screen_mode">وضع الشاشة الكاملة (تجريبي)</string>
     <string name="full_screen_mode_description">فعّل هذا الخيار فقط إذا اخترت \"الشاشة بالكامل\" عند بدء التسجيل. يستخدم تتبع الحركة لتقليل الوميض، لكن قد لا يعمل بشكل مثالي.\nيُنصح بشدة باستخدام تسجيل \"تطبيق واحد\" بدلاً من ذلك (متوفر على أندرويد 15+، وبعض الأجهزة على أندرويد 14).</string>
     <string name="notification_permission_required">إذن الإشعارات مطلوب لتشغيل الخدمة في الخلفية</string>
@@ -26,7 +30,7 @@
     <string name="notification_action_stop">إيقاف</string>
     <string name="notification_action_clear">مسح</string>
     <string name="notification_channel_name">التقاط الشاشة</string>
-    <string name="accessibility_service_description">يستخدم Shade خدمة إمكانية الوصول هذه لعرض الغطاء بشكل معتم بالكامل. في أندرويد 12 وما فوق، الأغطية العادية محدودة بشفافية 80%، مما قد لا يخفي المحتوى المكتشف بالكامل. تفعيل هذه الخدمة يسمح لـ Shade بعرض الغطاء بأي مستوى شفافية تختاره.\n\nيتم التقاط محتوى الشاشة للمعالجة على الجهاز فقط. لا يتم إرسال أي بيانات لأي مكان — Shade لا يملك إذن الإنترنت.</string>
+    <string name="accessibility_service_description">يستخدم Shade خدمة إمكانية الوصول هذه لعرض الغطاء بشكل معتم بالكامل. في أندرويد 12 وما فوق، الأغطية العادية محدودة بشفافية 80%، مما قد لا يخفي المحتوى المكتشف بالكامل. تفعيل هذه الخدمة يسمح لـ Shade بعرض الغطاء بأي مستوى شفافية تختاره.\n\nيتم التقاط محتوى الشاشة للمعالجة على الجهاز فقط. لا يتم إرسال أي بيانات لأي مكان — لا يملك التطبيق إذن الإنترنت.</string>
     <string name="permission_setup_title">لنبدأ</string>
     <string name="permission_setup_subtitle">يحتاج Shade لبعض الأذونات ليعمل</string>
     <string name="permission_granted">تم المنح</string>
@@ -50,8 +54,13 @@
     <string name="pixelation_level_description">ضبط حجم البكسلات. تشويش أعلى يقلل استهلاك الموارد.</string>
     <string name="pixelation_label_low">منخفض</string>
     <string name="pixelation_label_high">عالي</string>
+    <string name="high_pixelation">تشويش عالي</string>
+    <string name="low_pixelation">تشويش منخفض</string>
+    <string name="normal_mode">الوضع العادي</string>
+    <string name="ok">حسناً</string>
     <string name="detection_starting">جاري البدء …</string>
     <string name="detection_started">تم بدء التسجيل</string>
+    <string name="detection_setup_failed">حدث خطأ أثناء بدء الكشف.</string>
 
     <string name="getting_started_title">مرحباً بك في Shade</string>
     <string name="getting_started_step1_title">كيف يعمل</string>

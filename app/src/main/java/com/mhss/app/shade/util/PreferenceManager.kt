@@ -31,6 +31,7 @@ class PreferenceManager(private val context: Context) {
         private val HAS_SHOWN_INITIAL_DIALOG = booleanPreferencesKey("has_shown_unsupported_dialog")
         private val AUTO_START_APPS = stringSetPreferencesKey("auto_start_apps")
         private val PIXELATION_LEVEL = intPreferencesKey("pixelation_level")
+        private val DETAILED_MODE = booleanPreferencesKey("detailed_mode_enabled")
     }
 
     val confidencePercentFlow: Flow<Float> = context.dataStore.data
@@ -61,6 +62,11 @@ class PreferenceManager(private val context: Context) {
     val pixelationLevelFlow: Flow<Int> = context.dataStore.data
         .map { preferences ->
             preferences[PIXELATION_LEVEL] ?: DEFAULT_DOWNSAMPLE_FACTOR
+        }
+
+    val detailedModeFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[DETAILED_MODE] ?: false
         }
 
     suspend fun saveConfidencePercent(value: Float) {
@@ -141,6 +147,18 @@ class PreferenceManager(private val context: Context) {
                 MIN_DOWNSAMPLE_FACTOR,
                 MAX_DOWNSAMPLE_FACTOR
             )
+        }
+    }
+
+    suspend fun isDetailedModeEnabled(): Boolean {
+        return context.dataStore.data
+            .map { preferences -> preferences[DETAILED_MODE] ?: false }
+            .first()
+    }
+
+    suspend fun setDetailedMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[DETAILED_MODE] = enabled
         }
     }
 }

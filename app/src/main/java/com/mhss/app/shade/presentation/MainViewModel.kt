@@ -18,6 +18,7 @@ data class MainUiState(
     val isCapturing: Boolean = false,
     val confidence: Float = DEFAULT_CONFIDENCE_PERCENT,
     val performanceModeEnabled: Boolean = false,
+    val detailedModeEnabled: Boolean = false,
     val overlayOpacity: Float = 100f,
     val fullScreenModeEnabled: Boolean = false,
     val pixelationLevel: Int = DEFAULT_DOWNSAMPLE_FACTOR,
@@ -87,6 +88,12 @@ class MainViewModel(
         }
 
         viewModelScope.launch {
+            preferenceManager.detailedModeFlow.collectLatest { enabled ->
+                _uiState.update { state -> state.copy(detailedModeEnabled = enabled) }
+            }
+        }
+
+        viewModelScope.launch {
             ScreenCaptureService.isRunningFlow.collectLatest { isRunning ->
                 _uiState.update { state -> state.copy(isCapturing = isRunning) }
             }
@@ -147,6 +154,16 @@ class MainViewModel(
         _uiState.update { it.copy(pixelationLevel = value) }
         viewModelScope.launch {
             preferenceManager.setPixelationLevel(value)
+        }
+    }
+
+    fun updateDetailedMode(enabled: Boolean) {
+        _uiState.update { it.copy(detailedModeEnabled = enabled) }
+        viewModelScope.launch {
+            preferenceManager.setDetailedMode(enabled)
+            if (enabled) {
+                preferenceManager.setPowerMode(false)
+            }
         }
     }
 

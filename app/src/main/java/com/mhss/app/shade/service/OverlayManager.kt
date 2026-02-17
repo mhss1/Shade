@@ -3,6 +3,7 @@ package com.mhss.app.shade.service
 import android.graphics.Bitmap
 import com.mhss.app.shade.detection.DetectionBox
 import com.mhss.app.shade.detection.OverlayView
+import com.mhss.app.shade.detection.RawSegmentation
 import java.lang.ref.WeakReference
 
 object OverlayManager {
@@ -33,7 +34,11 @@ object OverlayManager {
         accessibilityOverlayView?.get()?.updateDetections(boxes, sourceBitmap)
     }
 
-    fun clearDetections() {
+    fun updateSegmentations(segmentations: List<RawSegmentation>, sourceBitmap: Bitmap) {
+        accessibilityOverlayView?.get()?.updateSegmentations(segmentations, sourceBitmap)
+    }
+
+    fun clear() {
         accessibilityOverlayView?.get()?.clear()
     }
 
