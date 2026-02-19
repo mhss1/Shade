@@ -23,6 +23,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 @Factory
 class PreferenceManager(private val context: Context) {
 
+    private val data = context.dataStore.data
+
     companion object {
         private val CONFIDENCE_PERCENT = floatPreferencesKey("confidence_percent")
         private val PERFORMANCE_MODE = booleanPreferencesKey("power_mode_enabled")
@@ -36,37 +38,37 @@ class PreferenceManager(private val context: Context) {
         private val DETAILED_MODE = booleanPreferencesKey("detailed_mode_enabled")
     }
 
-    val confidencePercentFlow: Flow<Float> = context.dataStore.data
+    val confidencePercentFlow: Flow<Float> = data
         .map { preferences ->
             preferences[CONFIDENCE_PERCENT] ?: DEFAULT_CONFIDENCE_PERCENT
         }
 
-    val performanceModeFlow: Flow<Boolean> = context.dataStore.data
+    val performanceModeFlow: Flow<Boolean> = data
         .map { preferences ->
             preferences[PERFORMANCE_MODE] ?: false
         }
 
-    val overlayOpacityFlow: Flow<Float> = context.dataStore.data
+    val overlayOpacityFlow: Flow<Float> = data
         .map { preferences ->
             preferences[OVERLAY_OPACITY] ?: 100f
         }
 
-    val fullScreenModeFlow: Flow<Boolean> = context.dataStore.data
+    val fullScreenModeFlow: Flow<Boolean> = data
         .map { preferences ->
             preferences[FULL_SCREEN_MODE] ?: false
         }
 
-    val autoStartAppsFlow: Flow<Set<String>> = context.dataStore.data
+    val autoStartAppsFlow: Flow<Set<String>> = data
         .map { preferences ->
             preferences[AUTO_START_APPS] ?: emptySet()
         }
 
-    val pixelationLevelFlow: Flow<Int> = context.dataStore.data
+    val pixelationLevelFlow: Flow<Int> = data
         .map { preferences ->
             preferences[PIXELATION_LEVEL] ?: DEFAULT_DOWNSAMPLE_FACTOR
         }
 
-    val detailedModeFlow: Flow<Boolean> = context.dataStore.data
+    val detailedModeFlow: Flow<Boolean> = data
         .map { preferences ->
             preferences[DETAILED_MODE] ?: false
         }

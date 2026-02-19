@@ -11,8 +11,8 @@
     <string name="confidence_label_high">Strict</string>
     <string name="settings_section_detection">Detection</string>
     <string name="settings_section_advanced">Advanced</string>
-    <string name="power_mode">High Performance Mode</string>
-    <string name="power_mode_description">Uses a larger AI model for better accuracy and smoother overlays. Detection may be slightly slower due to additional processing.</string>
+    <string name="power_mode">Precision Mode</string>
+    <string name="power_mode_description">Prioritizes detection accuracy using a larger AI model. Best for high-end devices.</string>
     <string name="detailed_mode">Detailed Mode</string>
     <string name="detailed_mode_description">Covers the exact shape of detected people instead of using rectangular boxes, so nearby objects won\'t be accidentally hidden. Uses more resources</string>
     <string name="overlay_opacity">Overlay Opacity</string>
@@ -56,7 +56,7 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="pixelation_level">Pixelation Level</string>
-    <string name="pixelation_level_description">Adjust the size of pixels. Higher pixelation can reduce processing load.</string>
+    <string name="pixelation_level_description">Adjust pixel size to balance image clarity and battery life. Larger pixels are easier for your device to process.</string>
     <string name="pixelation_label_low">Low</string>
     <string name="pixelation_label_high">High</string>
     <string name="high_pixelation">High Pixelation</string>
@@ -80,7 +80,7 @@
     <string name="onboarding_subtitle">Choose how Shade should detect and hide sensitive content.</string>
     <string name="onboarding_confidence_description">Set how strict detection should be. Lower values detect more but can trigger on safe content. Higher values reduce false alerts but may miss some content.</string>
     <string name="onboarding_overlay_opacity_description">Control how visible the cover is. Higher opacity hides content more completely, while lower opacity keeps more of the screen visible.</string>
-    <string name="onboarding_pixelation_level_description">Pick how strong the blur effect looks. Higher pixelation usually lowers processing load and gives stronger privacy.</string>
+    <string name="onboarding_pixelation_level_description">Adjust pixel size to balance image clarity and battery life. Larger pixels are easier for your device to process.</string>
     <string name="onboarding_detailed_mode_description">Switch between fast rectangular coverage and shape-based coverage. Detailed Mode better follows people but uses more processing power.</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_done">Done</string>
@@ -90,6 +90,6 @@
     <string name="screen_capture_initializing">Initializing capture…</string>
     <string name="model_loading_first_time_normal">Loading the model</string>
     <string name="model_loading_first_time_detailed">Loading the detailed model</string>
-    <string name="model_loading_first_time_large">Loading the large model</string>
+    <string name="model_loading_first_time_large">Loading the precision model</string>
     <string name="model_loading_description">The first load for each model type can take a few minutes.\nStarting detection is usually much faster next times</string>
 </resources>

@@ -204,9 +204,6 @@ class MainViewModel(
         _uiState.update { it.copy(detailedModeEnabled = enabled) }
         viewModelScope.launch {
             preferenceManager.setDetailedMode(enabled)
-            if (enabled) {
-                preferenceManager.setPowerMode(false)
-            }
         }
     }
 

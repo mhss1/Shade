@@ -518,7 +518,7 @@ class Detector(
 private const val TAG = "Detector"
 private const val INPUT_STANDARD_DEVIATION = 255f
 private const val INPUT_CHANNELS = 3
-const val DEFAULT_CONFIDENCE_PERCENT = 65F
+const val DEFAULT_CONFIDENCE_PERCENT = 70F
 private const val DEFAULT_CONF_THRESHOLD = DEFAULT_CONFIDENCE_PERCENT / 100f
 private val IMAGE_TYPE = DataType.FLOAT32
 private const val MAX_DETECTIONS = 12

@@ -42,6 +42,7 @@ import androidx.core.graphics.createBitmap
 import com.mhss.app.shade.detection.DEFAULT_CONFIDENCE_PERCENT
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import org.koin.android.ext.android.inject
 import java.util.concurrent.atomic.AtomicBoolean
@@ -148,7 +149,7 @@ class ScreenCaptureService : Service() {
                         }
 
                         launch {
-                            preferenceManager.performanceModeFlow.drop(1).collectLatest { enabled ->
+                            preferenceManager.performanceModeFlow.distinctUntilChanged().drop(1).collectLatest { enabled ->
                                 performanceModeEnabled = enabled
                                 if (!detailedModeEnabled) {
                                     rebuildDetector(enabled, segmentationMode = false)
@@ -157,7 +158,7 @@ class ScreenCaptureService : Service() {
                         }
 
                         launch {
-                            preferenceManager.detailedModeFlow.drop(1).collectLatest { enabled ->
+                            preferenceManager.detailedModeFlow.distinctUntilChanged().drop(1).collectLatest { enabled ->
                                 detailedModeEnabled = enabled
                                 val usePowerModel = if (enabled) false else performanceModeEnabled
                                 rebuildDetector(usePowerModel, enabled)
@@ -412,20 +413,23 @@ class ScreenCaptureService : Service() {
                 val rowStride = planes[0].rowStride
                 val rowPadding = rowStride - pixelStride * imageWidth
 
-                val bitmapWidth = imageWidth + (rowPadding / pixelStride)
-
-                if (
-                    bufferBitmap.width != bitmapWidth ||
-                    bufferBitmap.height != imageHeight
-                ) {
-                    bufferBitmap.recycle()
-                    bufferBitmap = createBitmap(bitmapWidth, imageHeight)
-                }
-                bufferBitmap.copyPixelsFromBuffer(buffer)
-
                 val inputBitmap = getInputBitmap(imageWidth, imageHeight)
-                inputCanvas.setBitmap(inputBitmap)
-                inputCanvas.drawBitmap(bufferBitmap, 0f, 0f, null)
+
+                if (rowPadding == 0) {
+                    inputBitmap.copyPixelsFromBuffer(buffer)
+                } else {
+                    val bitmapWidth = imageWidth + (rowPadding / pixelStride)
+                    if (
+                        bufferBitmap.width != bitmapWidth ||
+                        bufferBitmap.height != imageHeight
+                    ) {
+                        bufferBitmap.recycle()
+                        bufferBitmap = createBitmap(bitmapWidth, imageHeight)
+                    }
+                    bufferBitmap.copyPixelsFromBuffer(buffer)
+                    inputCanvas.setBitmap(inputBitmap)
+                    inputCanvas.drawBitmap(bufferBitmap, 0f, 0f, null)
+                }
 
                 serviceScope.launch {
                     try {
@@ -570,11 +574,15 @@ class ScreenCaptureService : Service() {
     private fun rebuildDetector(usePowerModel: Boolean, segmentationMode: Boolean) {
         clearOverlay()
         frameSimilarityChecker.clear()
+        _captureStateFlow.value = CaptureState.INITIALIZING
+        updateForegroundNotification(isInitializing = true)
         val rebuilt = setupDetector(usePowerModel, confidenceThreshold, segmentationMode)
         if (!rebuilt) {
             handleSetupFailure()
             return
         }
+        _captureStateFlow.value = CaptureState.RUNNING
+        updateForegroundNotification(isInitializing = false)
         serviceScope.launch(Dispatchers.Main) { updateVirtualDisplayConfig() }
     }
 

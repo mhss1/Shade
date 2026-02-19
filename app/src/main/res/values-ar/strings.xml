@@ -9,8 +9,8 @@
     <string name="confidence_label_high">صارم</string>
     <string name="settings_section_detection">الكشف</string>
     <string name="settings_section_advanced">متقدم</string>
-    <string name="power_mode">وضع الأداء العالي</string>
-    <string name="power_mode_description">يستخدم نموذج ذكاء اصطناعي أكبر لدقة أفضل وتغطية أكثر سلاسة. قد يكون الكشف أبطأ قليلاً بسبب المعالجة الإضافية.</string>
+    <string name="power_mode">وضع الدقة الفائقة</string>
+    <string name="power_mode_description">يعطي الأولوية لدقة الكشف باستخدام نموذج ذكاء اصطناعي أكبر. الأفضل للأجهزة القوية.</string>
     <string name="detailed_mode">الوضع التفصيلي</string>
     <string name="detailed_mode_description">يغطي الشكل الدقيق للأشخاص المكتشفين بدلاً من استخدام مربعات كاملة قد تخفي عناصر قريبة. يستهلك موارد أكثر.</string>
     <string name="overlay_opacity">الشفافية</string>
@@ -54,7 +54,7 @@
     <string name="save">حفظ</string>
     <string name="cancel">إلغاء</string>
     <string name="pixelation_level">مستوى التشويش</string>
-    <string name="pixelation_level_description">ضبط حجم البكسلات. تشويش أعلى يقلل استهلاك الموارد.</string>
+    <string name="pixelation_level_description">اضبط حجم البكسلات للموازنة بين وضوح الصورة واستهلاك البطارية. البكسلات الكبيرة أسهل في المعالجة.</string>
     <string name="pixelation_label_low">منخفض</string>
     <string name="pixelation_label_high">عالي</string>
     <string name="high_pixelation">تشويش عالي</string>
@@ -75,10 +75,10 @@
     <string name="getting_started_got_it">أبدأ</string>
 
     <string name="onboarding_title">إعداد الحماية</string>
-    <string name="onboarding_subtitle">اختر كيف يجب أن يكتشف التطبيق المحتوى الحساس ويخفيه.</string>
+    <string name="onboarding_subtitle">اختر كيف يجب أن يكتشف التطبيق المحتوى الحساس ويخفيه</string>
     <string name="onboarding_confidence_description">حدد مدى صرامة الكشف. القيم المنخفضة تكتشف أكثر لكنها قد تلتقط محتوى غير حساس. القيم المرتفعة تقلل الإنذارات الخاطئة لكنها قد تفوّت بعض الحالات.</string>
     <string name="onboarding_overlay_opacity_description">تحكم في وضوح الغطاء. الشفافية الأعلى تخفي المحتوى بشكل أقوى، والشفافية الأقل تُبقي جزءًا أكبر من الشاشة مرئيًا.</string>
-    <string name="onboarding_pixelation_level_description">اختر قوة تأثير التشويش. تشويش أعلى يعطي خصوصية أقوى ويقلل استهلاك الموارد.</string>
+    <string name="onboarding_pixelation_level_description">اضبط حجم البكسلات للموازنة بين وضوح الصورة واستهلاك البطارية. البكسلات الكبيرة أسهل في المعالجة.</string>
     <string name="onboarding_detailed_mode_description">بدّل بين تغطية مستطيلة سريعة وتغطية تعتمد على الشكل. الوضع التفصيلي أدق في تتبع الأشخاص لكنه يستهلك موارد أكثر.</string>
     <string name="onboarding_next">التالي</string>
     <string name="onboarding_done">تم</string>
@@ -88,6 +88,6 @@
     <string name="screen_capture_initializing">جارٍ تهيئة الالتقاط…</string>
     <string name="model_loading_first_time_normal">جارِ تجهيز النموذج</string>
     <string name="model_loading_first_time_detailed">جارٍ تجهيز النموذج التفصيلي</string>
-    <string name="model_loading_first_time_large">جارٍ تجهيز النموذج الكبير.</string>
+    <string name="model_loading_first_time_large">جارٍ تجهيز نموذج الدقة الفائقة.</string>
     <string name="model_loading_description">قد يستغرق التجهيز الأول لكل نوع نموذج بضع دقائق\nتكون مرات بدء الكشف التالية أسرع بعد ذلك</string>
 </resources>
