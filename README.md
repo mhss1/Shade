@@ -34,7 +34,7 @@ real-time — no web views or wrappers required. Just native, private content fi
 - 🔲 **Quick Settings tile** — Enable or disable from anywhere with a single tap
 - 📖 **100% open source** — The app and AI models are free and open source under the AGPL-3.0 license
 
-[<img src="assets/get-it-on-google-play.png"alt="Get it on Google Play"height="80">](https://play.google.com/store/apps/details?id=com.moh.sh.app.shade)
+[<img src="assets/get-it-on-google-play.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=com.moh.sh.app.shade)
 
 ## Under the Hood
 
